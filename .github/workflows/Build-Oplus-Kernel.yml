@@ -11,11 +11,6 @@ on:
       FILE:
         description: "配置文件名 // Configuration file name"
         required: true
-        type: choice
-        options:
-          - oneplus_13
-          - oneplus_13t
-          - oneplus_ace5_pro
         default: oneplus_13
 
       Chipset:
@@ -50,12 +45,12 @@ on:
       enable_SUS:
        description: "是否启用SUS"
        required: false
-       default: false
+       default: true
        type: boolean
       enable_VFS:
        description: "是否启用VFS补丁"
        required: false
-       default: false
+       default: true
        type: boolean
 jobs:
   build:
