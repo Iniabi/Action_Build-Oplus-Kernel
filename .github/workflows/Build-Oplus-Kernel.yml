@@ -107,7 +107,6 @@ jobs:
         uses: easimon/maximize-build-space@master
         with:
           root-reserve-mb: 8192
-          temp-reserve-mb: 2048
           swap-size-mb: 8192
           remove-dotnet: 'true'
           remove-android: 'true'
@@ -118,10 +117,8 @@ jobs:
         run: |
           git config --global user.name "build"
           git config --global user.email "anexplreaders@gmail.com"
-          sudo apt update -y
-          sudo apt-mark hold firefox
-          sudo apt upgrade -y -o Dpkg::Options::="--force-confold"
-          sudo apt install -y python3 git git-lfs curl && git lfs install
+          sudo apt update && sudo apt upgrade -y
+          sudo apt install -y python3 git curl
 
       - name: Install repo tool # 安装 repo 工具
         run: |
@@ -134,7 +131,6 @@ jobs:
           mkdir "$WORKSPACE" && cd "$WORKSPACE"
           repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ inputs.SoC }} -m ${{ inputs.FILE }}.xml --depth=1 || { echo "repo init 失败"; exit 1; }
           repo sync -c -j$(nproc --all) --no-tags || { echo "repo sync 失败"; exit 1; }
-          git clone https://gitlab.com/kei-space/clang/r522817.git $PLATFORM/prebuilts/clang/host/linux-x86/clang-r522817
 
       - name: Get KernelSU version # 获取 KernelSU 版本
         if: ${{ startsWith(inputs.KSU_CONFIG, 'SukiSU') }}
