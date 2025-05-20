@@ -255,7 +255,7 @@ jobs:
 
       - name: Build kernel # 构建内核
         run: |
-          cd "$WORKSPACE"
+          cd "$PLATFORM"
 
           BUILD_TYPE="gki"
           if [ "${{ inputs.Chipset }}" == "sun" ]; then
@@ -263,7 +263,7 @@ jobs:
           fi
 
           echo "开始构建内核，构建类型：$BUILD_TYPE"
-          LTO=thin ./kernel_platform/oplus/build/oplus_build_kernel.sh ${{ inputs.Chipset }} "$BUILD_TYPE" --jobs=$(nproc --all) || { echo "内核构建失败"; exit 1; }
+          tools/bazel run --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist|| { echo "内核构建失败"; exit 1; }
 
       - name: Make AnyKernel3 # 制作 AnyKernel3
         run: |
@@ -276,7 +276,7 @@ jobs:
           rm -rf ./AnyKernel3/push.sh
 
           # Copy kernel
-          IMAGE_PATH=$(find "$PLATFORM/out" -name "Image")
+          IMAGE_PATH=$(find "$PLATFORM/dist" -name "Image")
           if [ -n "$IMAGE_PATH" ]; then
             cp "$IMAGE_PATH" "$WORKSPACE/AnyKernel3/Image"
             cp "$IMAGE_PATH" "$WORKSPACE/image_output/Image"
@@ -286,21 +286,9 @@ jobs:
             exit 1
           fi
 
-          # Copy dtbo.img
-          if [[ "${{ env.KERNEL_VERSION }}" == "6.6" && "${{ inputs.FILE }}" != "oneplus_13t" ]]; then
-            readarray -d '' DTBO_FILES < <(find device/ -type f -name '*dtbo.img' -print0)
-
-            if [ ${#DTBO_FILES[@]} -gt 0 ]; then
-                cp "${DTBO_FILES[@]}" "$WORKSPACE/image_output/"
-                echo "已复制以下文件到 image_output/："
-                printf "%s\n" "${DTBO_FILES[@]}"
-            else
-                echo "未找到任何 dtbo.img 文件"
-            fi
-          fi
 
           # Copy boot.img
-          BOOTIMG_PATH=$(find "$PLATFORM/out" -name "boot.img")
+          BOOTIMG_PATH=$(find "$PLATFORM/dist" -name "boot.img")
           if [ -n "$BOOTIMG_PATH" ]; then
             cp "$BOOTIMG_PATH" "$WORKSPACE/image_output/boot.img"
             echo "boot.img 文件已找到:$BOOTIMG_PATH"
