@@ -296,7 +296,7 @@ jobs:
           chmod +x patch_linux
           ./patch_linux || { echo "应用 patch_linux 失败"; exit 1; }
           rm -rf patch_linux
-          cp oImage "$WORKSPACE/AnyKernel3/Image"
+          mv oImage "$WORKSPACE/AnyKernel3/Image"
           echo "Patched Image 文件替换成功"
 
       - name: Get formatted date # 获取格式化日期
