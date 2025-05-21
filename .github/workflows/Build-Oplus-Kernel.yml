@@ -248,14 +248,14 @@ jobs:
 
       - name: Build kernel # 构建内核
         run: |
-          cd "$WORKSPACE"
+          cd "$PLATFORM"
 
           # Set Kernel build timestamp
           export SOURCE_DATE_EPOCH=$(date -d "${{ github.event.inputs.KERNEL_TIME }}" +%s)
           echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
 
           echo "开始构建内核"
-          LTO=thin ./kernel_platform/oplus/build/oplus_build_kernel.sh sun perf --jobs=$(nproc --all) || { echo "内核构建失败"; exit 1; }
+          tools/bazel run --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist || { echo "内核构建失败"; exit 1; }
 
       - name: Make AnyKernel3 # 制作 AnyKernel3
         run: |
@@ -268,7 +268,7 @@ jobs:
           rm -rf ./AnyKernel3/push.sh
 
           # Copy kernel
-          IMAGE_PATH=$(find "$PLATFORM/out" -name "Image")
+          IMAGE_PATH=$(find "$PLATFORM/dist" -name "Image")
           if [ -n "$IMAGE_PATH" ]; then
             cp "$IMAGE_PATH" "$WORKSPACE/AnyKernel3/Image"
             cp "$IMAGE_PATH" "$WORKSPACE/image_output/Image"
@@ -280,7 +280,7 @@ jobs:
 
 
           # Copy boot.img
-          BOOTIMG_PATH=$(find "$PLATFORM/out" -name "boot.img")
+          BOOTIMG_PATH=$(find "$PLATFORM/dist" -name "boot.img")
           if [ -n "$BOOTIMG_PATH" ]; then
             cp "$BOOTIMG_PATH" "$WORKSPACE/image_output/boot.img"
             echo "boot.img 文件已找到:$BOOTIMG_PATH"
