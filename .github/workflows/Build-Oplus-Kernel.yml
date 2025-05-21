@@ -203,9 +203,9 @@ jobs:
           sed -i 's/ -dirty//g' "$PLATFORM/common/scripts/setlocalversion"
           sed -i 's/ -dirty//g' "$PLATFORM/msm-kernel/scripts/setlocalversion"
           sed -i 's/ -dirty//g' "$PLATFORM/external/dtc/scripts/setlocalversion"
-          sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" "$PLATFORM/build/kernel/kleaf/impl/stamp.bzl"
-          sed -i '/KMI_GENERATION/s/-$oki_infix//g' "$PLATFORM/build/kernel/kleaf/impl/stamp.bzl"
-          sed -i 's/^\(CONFIG_LOCALVERSION="[^"]*\)"/\1-Lotus"/' "$DEFCONFIG"
+          #sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" "$PLATFORM/build/kernel/kleaf/impl/stamp.bzl"
+          #sed -i '/KMI_GENERATION/s/-$oki_infix//g' "$PLATFORM/build/kernel/kleaf/impl/stamp.bzl"
+          #sed -i 's/^\(CONFIG_LOCALVERSION="[^"]*\)"/\1-Lotus"/' "$DEFCONFIG"
 
           # Replace kernel name strings
           echo "正在设置内核名称..."
@@ -257,13 +257,8 @@ jobs:
         run: |
           cd "$PLATFORM"
 
-          BUILD_TYPE="gki"
-          if [ "${{ inputs.Chipset }}" == "sun" ]; then
-            BUILD_TYPE="perf"
-          fi
-
           echo "开始构建内核，构建类型：$BUILD_TYPE"
-          tools/bazel run --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist|| { echo "内核构建失败"; exit 1; }
+          LTO=thin ./kernel_platform/oplus/build/oplus_build_kernel.sh sun perf --jobs=$(nproc --all) || { echo "内核构建失败"; exit 1; }
 
       - name: Make AnyKernel3 # 制作 AnyKernel3
         run: |
@@ -276,7 +271,7 @@ jobs:
           rm -rf ./AnyKernel3/push.sh
 
           # Copy kernel
-          IMAGE_PATH=$(find "$PLATFORM/dist" -name "Image")
+          IMAGE_PATH=$(find "$PLATFORM/out" -name "Image")
           if [ -n "$IMAGE_PATH" ]; then
             cp "$IMAGE_PATH" "$WORKSPACE/AnyKernel3/Image"
             cp "$IMAGE_PATH" "$WORKSPACE/image_output/Image"
@@ -288,7 +283,7 @@ jobs:
 
 
           # Copy boot.img
-          BOOTIMG_PATH=$(find "$PLATFORM/dist" -name "boot.img")
+          BOOTIMG_PATH=$(find "$PLATFORM/out" -name "boot.img")
           if [ -n "$BOOTIMG_PATH" ]; then
             cp "$BOOTIMG_PATH" "$WORKSPACE/image_output/boot.img"
             echo "boot.img 文件已找到:$BOOTIMG_PATH"
@@ -317,7 +312,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: "${{ inputs.FILE }}-SukiSU-${{ env.KSUVER }}"
-          path: ${{ env.WORKSPACE }}/AnyKernel3-KernelSU-Next/*
+          path: ${{ env.WORKSPACE }}/AnyKernel3/*
 
       - name: Upload Image # 上传 Image
         uses: actions/upload-artifact@v4
