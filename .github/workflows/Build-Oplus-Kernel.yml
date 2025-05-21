@@ -339,7 +339,7 @@ jobs:
             - Kernel 版本: `${{ inputs.VERSION }}`
             - 构建时间: `${{ steps.formatted_date.outputs.formatted }}`
           files: |
-            ${{ env.WORKSPACE }}/AnyKernel3-*.zip
+            ${{ env.WORKSPACE }}/oneplus*.zip
             ${{ env.WORKSPACE }}/image_output/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
