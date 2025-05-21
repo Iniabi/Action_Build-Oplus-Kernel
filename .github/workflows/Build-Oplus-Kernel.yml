@@ -107,11 +107,13 @@ jobs:
         uses: easimon/maximize-build-space@master
         with:
           root-reserve-mb: 8192
+          temp-reserve-mb: 2048
           swap-size-mb: 8192
           remove-dotnet: 'true'
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
+
 
       - name: Configure Git & Install dependencies # 配置 Git & 安装依赖
         run: |
@@ -130,7 +132,7 @@ jobs:
         run: |
           mkdir "$WORKSPACE" && cd "$WORKSPACE"
           repo init -u https://github.com/OnePlusOSS/kernel_manifest.git -b refs/heads/oneplus/${{ inputs.SoC }} -m ${{ inputs.FILE }}.xml --depth=1 || { echo "repo init 失败"; exit 1; }
-          repo sync -c -j$(nproc --all) --no-tags || { echo "repo sync 失败"; exit 1; }
+          repo sync -c -j$(nproc --all) || { echo "repo sync 失败"; exit 1; }
 
       - name: Get KernelSU version # 获取 KernelSU 版本
         if: ${{ startsWith(inputs.KSU_CONFIG, 'SukiSU') }}
@@ -171,7 +173,7 @@ jobs:
           # Patches apply
           cd "$COMMON"
           echo "正在给内核打 susfs 补丁..."
-          sed -i '/#include <trace\/hooks\/blk.h>/a #include <trace/hooks/fs.h>' ./fs/namespace.c
+          sed -i '/#include <trace\/hooks\/blk.h>/a #include <trace/hooks/fs.h>' fs/namespace.c
           patch -p1 < "50_add_susfs_in_gki-${{ env.ANDROID_VERSION }}-${{ env.KERNEL_VERSION }}.patch" || { echo "应用 susfs 补丁失败"; exit 1; }
           echo "susfs 补丁应用完成"
 
@@ -203,9 +205,9 @@ jobs:
           sed -i 's/ -dirty//g' "$PLATFORM/common/scripts/setlocalversion"
           sed -i 's/ -dirty//g' "$PLATFORM/msm-kernel/scripts/setlocalversion"
           sed -i 's/ -dirty//g' "$PLATFORM/external/dtc/scripts/setlocalversion"
-          #sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" "$PLATFORM/build/kernel/kleaf/impl/stamp.bzl"
-          #sed -i '/KMI_GENERATION/s/-$oki_infix//g' "$PLATFORM/build/kernel/kleaf/impl/stamp.bzl"
-          #sed -i 's/^\(CONFIG_LOCALVERSION="[^"]*\)"/\1-Lotus"/' "$DEFCONFIG"
+          sed -i '$i res=$(echo "$res" | sed '\''s/-dirty//g'\'')' "COMMON/scripts/setlocalversion"
+          git add -A
+          git commit -m "Force remove -dirty suffix from kernel version"
 
           # Replace kernel name strings
           echo "正在设置内核名称..."
@@ -218,17 +220,13 @@ jobs:
           rm -rf ./sched_ext/.git
           rm -rf ./sched_ext/README.md
           cp -r ./sched_ext/* "$COMMON/kernel/sched"
-          
-          # Set Kernel build timestamp
-          export SOURCE_DATE_EPOCH=$(date -d "${{ github.event.inputs.KERNEL_TIME }}" +%s)
-          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
 
           # Set KSU config to gki_defconfig
           echo "正在更新KernelSU 内核配置..."
           echo "CONFIG_KSU=y" >> "$DEFCONFIG"
           echo "CONFIG_KPM=y" >> "$DEFCONFIG"
-          echo "CONFIG_KSU_SUSFS_SUS_SU=${{ inputs.enable_VFS || 'y' }}" >> "$DEFCONFIG"
-          echo "CONFIG_KSU_MANUAL_HOOK=${{ inputs.enable_VFS && 'y' || 'n' }}" >> "$DEFCONFIG"
+          eecho "CONFIG_KSU_SUSFS_SUS_SU=n" >> "$DEFCONFIG"
+          echo "CONFIG_KSU_MANUAL_HOOK=y" >> "$DEFCONFIG"
 
           # Use SukiSU default config
           echo "CONFIG_KSU_SUSFS=y" >> "$DEFCONFIG"
@@ -248,16 +246,15 @@ jobs:
           echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> "$DEFCONFIG"
           echo "更新KernelSU 内核配置完成"
 
-          # 
-          cd "$COMMON"
-          git status
-          cat "$DEFCONFIG"
-
       - name: Build kernel # 构建内核
         run: |
           cd "$WORKSPACE"
 
-          echo "开始构建内核，构建类型：$BUILD_TYPE"
+          # Set Kernel build timestamp
+          export SOURCE_DATE_EPOCH=$(date -d "${{ github.event.inputs.KERNEL_TIME }}" +%s)
+          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
+
+          echo "开始构建内核"
           LTO=thin ./kernel_platform/oplus/build/oplus_build_kernel.sh sun perf --jobs=$(nproc --all) || { echo "内核构建失败"; exit 1; }
 
       - name: Make AnyKernel3 # 制作 AnyKernel3
