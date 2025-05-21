@@ -253,7 +253,7 @@ jobs:
           echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
 
           echo "开始构建内核"
-          tools/bazel run //common:kernel_aarch64_dist -- --dist_dir=dist || { echo "内核构建失败"; exit 1; }
+          tools/bazel run --config=stamp //common:kernel_aarch64_dist -- --dist_dir=dist || { echo "内核构建失败"; exit 1; }
 
       - name: Make AnyKernel3 # 制作 AnyKernel3
         run: |
@@ -323,7 +323,7 @@ jobs:
       - name: Create Release version and upload # 创建正式版本并上传
         uses: softprops/action-gh-release@v2
         with:
-          name: "内核发布: ${{ env.BRAND }}-${{ env.MODEL }}-${{ steps.formatted_date.outputs.formatted }}"
+          name: "${{ env.BRAND }}-${{ env.MODEL }}-${{ steps.formatted_date.outputs.formatted }}"
           tag_name: "${{ inputs.FILE }}-${{ steps.formatted_date.outputs.formatted }}"
           body: |
             OnePlus Kernel Build
