@@ -206,8 +206,6 @@ jobs:
           sed -i 's/ -dirty//g' "$PLATFORM/msm-kernel/scripts/setlocalversion"
           sed -i 's/ -dirty//g' "$PLATFORM/external/dtc/scripts/setlocalversion"
           sed -i '$i res=$(echo "$res" | sed '\''s/-dirty//g'\'')' "$COMMON/scripts/setlocalversion"
-          git add -A
-          git commit -m "Force remove -dirty suffix from kernel version"
 
           # Replace kernel name strings
           echo "正在设置内核名称..."
