@@ -255,7 +255,7 @@ jobs:
           echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
 
           echo "开始构建内核"
-          tools/bazel run --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist || { echo "内核构建失败"; exit 1; }
+          tools/bazel run --config=fast --config=stamp //common:kernel_aarch64_dist -- --dist_dir=dist || { echo "内核构建失败"; exit 1; }
 
       - name: Make AnyKernel3 # 制作 AnyKernel3
         run: |
