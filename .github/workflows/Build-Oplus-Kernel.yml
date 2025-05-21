@@ -295,7 +295,7 @@ jobs:
           curl -LO https://github.com/ShirkNeko/SukiSU_KernelPatch_patch/releases/download/0.11-beta/patch_linux
           chmod +x patch_linux
           ./patch_linux || { echo "应用 patch_linux 失败"; exit 1; }
-
+          rm -rf patch_linux
           cp oImage "$WORKSPACE/AnyKernel3/Image"
           echo "Patched Image 文件替换成功"
 
